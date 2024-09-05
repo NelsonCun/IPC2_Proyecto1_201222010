@@ -32,4 +32,37 @@ class ListaCircular:
             actual = actual.siguiente
         return actual
     
-    
+    def eliminar(self, nombre):
+        if self.primero is None:  # Caso: lista vacía
+            return
+        
+        actual = self.primero
+        previo = None
+        
+        # Caso especial: si la lista tiene un solo elemento
+        if self.size == 1 and actual.nombre == nombre:
+            self.primero = None
+            self.size = 0
+            return
+        
+        # Caso: eliminar el primer nodo
+        if actual.nombre == nombre:
+            # Encontrar el último nodo para mantener la circularidad
+            ultimo = self.primero
+            while ultimo.siguiente != self.primero:
+                ultimo = ultimo.siguiente
+            
+            # Actualizar el primero y el siguiente del último
+            self.primero = actual.siguiente
+            ultimo.siguiente = self.primero
+            self.size -= 1
+            return
+        
+        # Caso: eliminar un nodo que no es el primero
+        while actual.siguiente != self.primero and actual.nombre != nombre:
+            previo = actual
+            actual = actual.siguiente
+        
+        if actual.nombre == nombre:
+            previo.siguiente = actual.siguiente
+            self.size -= 1

@@ -35,13 +35,20 @@ def cargar_Archivo():
     doc = minidom.parse(rutaArchivo)
     root = doc.documentElement
     
+    print ("\nAgregando matrices...\n")
     #listaMatrices = ListaCircular()
     
     matrices = root.getElementsByTagName('matriz') #Obtenemos todos los nodos matriz
     for matriz in matrices:
         nombreMatriz = matriz.getAttribute('nombre') #Obtenemos el atributo nombre
         filas = int(matriz.getAttribute('n')) #Obtenemos el atributo n
+        if filas < 1:
+            print(f"No se puede leer la matriz {nombreMatriz} ya que sus filas son menores que 1")
+            continue
         columnas = int(matriz.getAttribute('m')) #Obtenemos el atributo m
+        if columnas < 1:
+            print(f"No se puede leer la matriz {nombreMatriz} ya que sus filas son menores que 1")
+            continue
         
         # print(f"\nNombre: {nombreMatriz}, Filas: {filas}, Columnas: {columnas}")
         
@@ -49,31 +56,57 @@ def cargar_Archivo():
         
         celdas = matriz.getElementsByTagName('dato') #Obtenemos todos los nodos dato
         i = 1
+        error = False
+        
         for celda in celdas:
             fila = int(celda.getAttribute('x'))
+            if fila > filas:
+                print(f"No se puede leer la matriz {nombreMatriz}, ya que contiene una celda ({fila}, {columna}) cuya fila es más grande que las que puede contener")
+                error = True
+                break
             columna = int(celda.getAttribute('y'))
+            if columna > columnas:
+                print(f"No se puede leer la matriz {nombreMatriz}, ya que contiene una celda ({fila}, {columna}) cuya columna es más grande que las que puede contener")
+                error = True
+                break
             valor = int(celda.firstChild.data)
             
             # print(f'\n fila: {fila}, columna: {columna}, valor: {valor}')
             celda = NodoCelda(fila, columna, valor)
-            print(celda.fila, celda.columna, celda.valor)
+            #print(celda.fila, celda.columna, celda.valor)
             matrizObj.insertar(celda)
-            print(f'Se agregó el nodo {i}')
+            #print(f'Se agregó el nodo {i}')
             i += 1
             # Imprimimos la matriz
-            
-            
-        matrizObj.imprimir()
+        
+        if error:
+            continue
+        
+        print(f"\n Se agregó la matriz: {matrizObj.nombre}\n")    
+        #matrizObj.imprimir()
+        
+        actual = listaMatrices.primero
+        for i in range(listaMatrices.size):
+            if actual.nombre == matrizObj.nombre:
+                listaMatrices.eliminar(actual.nombre)
+                break
+            actual = actual.siguiente
         
         listaMatrices.insertar(matrizObj)
     
+    print(f"\nSe agregaron las matrices: ")
     listaMatrices.imprimir()
+    print("\n------------------------------------------------")
         
-    print("Datos leídos correctamente")
+    print("\nDatos leídos correctamente\n")
         
 def procesarArchivo():
-    print("\n Se están creando las matrices de patrones de acceso...")
+    
     actual = listaMatrices.primero
+    if actual is None:
+        print("No hay matrices para procesar")
+        return
+    print("\n Se están creando las matrices de patrones de acceso...")
     for matriz in range(listaMatrices.size):
         newMatriz = Matriz(actual.nombre, actual.filas, actual.columnas)
         actual2 = actual.primero
@@ -82,11 +115,11 @@ def procesarArchivo():
             if actual2.valor >= 1:
                 valor = 1
             newCelda = NodoCelda(actual2.fila, actual2.columna, valor)
-            print(f"Se agregó el valor {valor}")
+            #print(f"Se agregó el valor {valor}")
             newMatriz.insertar(newCelda)
             actual2 = actual2.siguiente
         matricesPAcceso.insertar(newMatriz)
-        newMatriz.imprimir()
+        #newMatriz.imprimir()
         actual = actual.siguiente
     print("Se crearon las matrices de patrones de acceso correctamente\n")
     
@@ -121,15 +154,14 @@ def procesarArchivo():
                     if frecuencia == 0:
                         for k in range(matrizActual.columnas):
                             nuevoValor = listaMatrices.buscar(matrizActual.nombre).buscar(i+1,k+1).valor + listaMatrices.buscar(matrizActual.nombre).buscar(j+1,k+1).valor
-                            nuevoNodo = NodoCelda(nuevaMatriz.filas+1, k+1, nuevoValor)
+                            nuevoNodo = NodoCelda(filas+1, k+1, nuevoValor)
                             nuevaMatriz.insertar(nuevoNodo)
-                        nuevaMatriz.filas = nuevaMatriz.filas+1
                         frecuencia += 1
                     elif frecuencia > 0:
                         for k in range(matrizActual.columnas):
-                            nuevoValor = nuevaMatriz.buscar(nuevaMatriz.filas,k+1).valor + listaMatrices.buscar(matrizActual.nombre).buscar(j+1,k+1).valor
-                            nuevaMatriz.eliminar(nuevaMatriz.filas,k+1)
-                            nuevoNodo = NodoCelda(nuevaMatriz.filas,k+1,nuevoValor)
+                            nuevoValor = nuevaMatriz.buscar(filas+1,k+1).valor + listaMatrices.buscar(matrizActual.nombre).buscar(j+1,k+1).valor
+                            nuevaMatriz.eliminar(filas+1,k+1)
+                            nuevoNodo = NodoCelda(filas+1,k+1,nuevoValor)
                             nuevaMatriz.insertar(nuevoNodo)
                         frecuencia += 1                
                     filaNueva = NodoFilas(j+1)
@@ -137,20 +169,20 @@ def procesarArchivo():
                     agregado = True
             if agregado == False:
                 for k in range(matrizActual.columnas):
-                    nuevoNodo = NodoCelda(nuevaMatriz.filas+1, k+1, listaMatrices.buscar(matrizActual.nombre).buscar(i+1,k+1).valor)
+                    nuevoNodo = NodoCelda(filas+1, k+1, listaMatrices.buscar(matrizActual.nombre).buscar(i+1,k+1).valor)
                     nuevaMatriz.insertar(nuevoNodo)
                 filaNueva = NodoFilas(i+1)
                 filasAgregadas.insertar(filaNueva)
             NodoFrecuencia = NodoFreq(i+1, frecuencia+1)
-            print(f"fila {i+1}, frecuencia {frecuencia+1}")
-            print(f"{NodoFrecuencia.fila},{NodoFrecuencia.frecuencia}")
+            #print(f"fila {i+1}, frecuencia {frecuencia+1}")
+            #print(f"{NodoFrecuencia.fila},{NodoFrecuencia.frecuencia}")
             nuevaMatriz.insertarFreq(NodoFrecuencia)
             filas = filas + 1
                  
         nuevaMatriz.filas = filas
         nuevaMatriz.columnas = matrizActual.columnas
-        print(f"Tamaño de matriz reducida: {nuevaMatriz.size}")
-        nuevaMatriz.imprimir()
+        #print(f"Tamaño de matriz reducida: {nuevaMatriz.size}")
+        #nuevaMatriz.imprimir()
         matricesReducidas.insertar(nuevaMatriz)
         matrizActual = matrizActual.siguiente
                 
@@ -158,6 +190,7 @@ def procesarArchivo():
 
 
 def escribirArchivo():
+    print("\n... se está escribiendo archivo de salida")
     doc = minidom.Document()
     root = doc.createElement('matricesReducidas')
     doc.appendChild(root)
@@ -172,7 +205,7 @@ def escribirArchivo():
         
         nodoActual = actual.primero
         for i in range(actual.size):
-            print("Entro a esta función")
+            #print("Entro a esta función")
             nodo_element = doc.createElement('dato')
             nodo_element.setAttribute('x', str(nodoActual.fila))
             nodo_element.setAttribute('y', str(nodoActual.columna))
@@ -185,7 +218,7 @@ def escribirArchivo():
             nodo_element = doc.createElement('frecuencia')
             nodo_element.setAttribute('g', str(frecuencia.fila))
             nodo_element.appendChild(doc.createTextNode(str(frecuencia.frecuencia)))
-            print(f"fila {frecuencia.fila}, frecuencia {frecuencia.frecuencia}")
+            #print(f"fila {frecuencia.fila}, frecuencia {frecuencia.frecuencia}")
             matriz_element.appendChild(nodo_element)
             frecuencia = frecuencia.siguiente
             
@@ -195,7 +228,7 @@ def escribirArchivo():
     with open('matricesReducidas.xml', 'w', encoding='UTF-8') as file:
         file.write(doc.toprettyxml(indent='    '))
                    
-    print("\n... se está escribiendo archivo de salida")
+    print("\n... se escribió el archivo de salida correctamente.")
                     
     
 if __name__ == "__main__":
@@ -204,6 +237,7 @@ if __name__ == "__main__":
     listaMatrices = ListaCircular()
     matricesPAcceso = ListaCircular()
     matricesReducidas = ListaCircular()
+    graficas = 0
     
     while opc != 6:
         opc = menu()
@@ -213,17 +247,8 @@ if __name__ == "__main__":
         elif opc == 2:
             procesarArchivo()
             
-            print("Elemento Ejemplo 3, x=2, y=1, 4")
-            nodo = listaMatrices.buscar("Ejemplo").buscar(4,2)
-            print(f'fila {nodo.fila}, columna {nodo.columna}, valor {nodo.valor}')
-            
-            print("Reducida")
-            nodo = matricesPAcceso.buscar("Ejemplo").buscar(4,2)
-            print(f'fila {nodo.fila}, columna {nodo.columna}, valor {nodo.valor}')
-            
         elif opc == 3:
             escribirArchivo()
-            print("\n... se está escribiendo archivo de salida")
             
         elif opc == 4:
             print("\nDATOS DEL ESTUDIANTE:")
@@ -233,7 +258,14 @@ if __name__ == "__main__":
             print("Ingeniería en Ciencias y Sistemas")
             print("4to. Semestre")
         elif opc == 5:
-            print("\n... se está generando gráfica")
+            print("\nMatrices disponibles: ")
+            listaMatrices.imprimir()
+            nombre = input("\nIngrese el nombre de la matriz que desea graficar: ")
+            
+            listaMatrices.buscar(nombre).crearGraphviz()
+            matricesReducidas.buscar(nombre).crearGraphviz2()
+            print("\n... gráficas generadas exitosamente.")
+            
         elif opc == 6:
             print("\n... saliendo...")
     print("*********************************************")
